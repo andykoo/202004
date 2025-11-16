@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>蝴蝶花園遊戲</title>
+  <style>
+    :root {
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: #1f2933;
+      background: radial-gradient(circle at top, #fef9f5, #f7ecff);
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      margin: 0;
+    }
+
+    .game-wrapper {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(69, 33, 123, 0.2);
+      padding: 2rem;
+      width: min(90vw, 760px);
+    }
+
+    h1 {
+      text-align: center;
+      letter-spacing: 0.2rem;
+      color: #b453b6;
+      margin-top: 0;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .hud span {
+      font-weight: 600;
+      font-size: 1.15rem;
+    }
+
+    button {
+      background: linear-gradient(120deg, #ff9a8b, #ff6a88, #ff99ac);
+      border: none;
+      border-radius: 999px;
+      color: white;
+      font-weight: 700;
+      padding: 0.65rem 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:active {
+      transform: translateY(2px);
+    }
+
+    .play-area {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: linear-gradient(#c1f1ff, #e4ffd0);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 4px solid rgba(180, 83, 182, 0.3);
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .butterfly,
+    .flower {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      pointer-events: none;
+    }
+
+    .butterfly {
+      background-image: url('data:image/svg+xml,%3Csvg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M35 30c0-7.7-4.9-18.5-12.4-18.5-7.5 0-13.6 9.3-13.6 18.5 0 9.2 6.1 18.5 13.6 18.5C30.1 48.5 35 37.7 35 30Z" fill="%23f472b6"/%3E%3Cpath d="M35 30c0-7.7 4.9-18.5 12.4-18.5 7.5 0 13.6 9.3 13.6 18.5 0 9.2-6.1 18.5-13.6 18.5C39.9 48.5 35 37.7 35 30Z" fill="%23fb7185"/%3E%3Ccircle cx="35" cy="34" r="7" fill="%234c1d95"/%3E%3Crect x="32" y="34" width="6" height="18" rx="3" fill="%2327174d"/%3E%3C/svg%3E');
+      background-size: contain;
+      animation: flutter 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes flutter {
+      from {
+        transform: translateY(-2px) rotate(-2deg);
+      }
+      to {
+        transform: translateY(2px) rotate(2deg);
+      }
+    }
+
+    .flower {
+      background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Ccircle fill="%23fde047" cx="30" cy="30" r="8"/%3E%3Cpath d="M30 6c3 4 6 8 6 12s-3 8-6 12c-3-4-6-8-6-12s3-8 6-12Z" fill="%23fb7185"/%3E%3Cpath d="M54 30c-4 3-8 6-12 6s-8-3-12-6c4-3 8-6 12-6s8 3 12 6Z" fill="%23f472b6"/%3E%3Cpath d="M30 54c-3-4-6-8-6-12s3-8 6-12c3 4 6 8 6 12s-3 8-6 12Z" fill="%23fb7185"/%3E%3Cpath d="M6 30c4-3 8-6 12-6s8 3 12 6c-4 3-8 6-12 6s-8-3-12-6Z" fill="%23f472b6"/%3E%3C/g%3E%3C/svg%3E');
+      background-size: contain;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 1.05rem;
+      color: #475569;
+      min-height: 2.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrapper">
+    <h1>蝴蝶花園</h1>
+    <div class="hud">
+      <span>分數：<strong id="score">0</strong></span>
+      <span>剩餘時間：<strong id="time">60</strong> 秒</span>
+      <button id="startBtn">開始 / 重來</button>
+    </div>
+    <div class="play-area" id="playArea"></div>
+    <div class="message" id="message">使用鍵盤方向鍵帶著蝴蝶採集花蜜！</div>
+  </div>
+
+  <script>
+    const playArea = document.getElementById('playArea');
+    const startBtn = document.getElementById('startBtn');
+    const scoreLabel = document.getElementById('score');
+    const timeLabel = document.getElementById('time');
+    const message = document.getElementById('message');
+
+    const areaRect = () => playArea.getBoundingClientRect();
+    const butterfly = document.createElement('div');
+    butterfly.classList.add('butterfly');
+
+    const state = {
+      running: false,
+      score: 0,
+      time: 60,
+      speed: 6,
+      flowerCount: 6,
+      timerId: null,
+      keyState: { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false }
+    };
+
+    function resetGame() {
+      state.running = false;
+      state.score = 0;
+      state.time = 60;
+      scoreLabel.textContent = state.score;
+      timeLabel.textContent = state.time;
+      playArea.innerHTML = '';
+      playArea.appendChild(butterfly);
+      butterfly.style.left = '50%';
+      butterfly.style.top = '50%';
+      butterfly.style.transform = 'translate(-50%, -50%)';
+      createFlowers();
+      message.textContent = '準備好了就按下開始吧！';
+    }
+
+    function createFlowers() {
+      for (let i = 0; i < state.flowerCount; i++) {
+        spawnFlower();
+      }
+    }
+
+    function spawnFlower() {
+      const flower = document.createElement('div');
+      flower.classList.add('flower');
+      const { width, height } = playArea.getBoundingClientRect();
+      const buffer = 40;
+      const x = Math.random() * (width - buffer);
+      const y = Math.random() * (height - buffer);
+      flower.style.left = `${x}px`;
+      flower.style.top = `${y}px`;
+      playArea.appendChild(flower);
+    }
+
+    function startGame() {
+      if (state.running) return;
+      state.running = true;
+      message.textContent = '用方向鍵帶著蝴蝶飛舞，收集所有花朵！';
+      state.timerId = setInterval(() => {
+        state.time--;
+        timeLabel.textContent = state.time;
+        if (state.time <= 0) {
+          endGame('時間到！');
+        }
+      }, 1000);
+      requestAnimationFrame(update);
+    }
+
+    function endGame(reason) {
+      state.running = false;
+      clearInterval(state.timerId);
+      message.textContent = `${reason} 你獲得了 ${state.score} 分！`;
+    }
+
+    function update() {
+      if (!state.running) return;
+      moveButterfly();
+      checkCollisions();
+      requestAnimationFrame(update);
+    }
+
+    function moveButterfly() {
+      const rect = areaRect();
+      const butterflyRect = butterfly.getBoundingClientRect();
+      let left = butterfly.offsetLeft;
+      let top = butterfly.offsetTop;
+
+      if (state.keyState.ArrowUp) top -= state.speed;
+      if (state.keyState.ArrowDown) top += state.speed;
+      if (state.keyState.ArrowLeft) left -= state.speed;
+      if (state.keyState.ArrowRight) left += state.speed;
+
+      const maxX = rect.width - butterflyRect.width;
+      const maxY = rect.height - butterflyRect.height;
+      left = Math.max(0, Math.min(left, maxX));
+      top = Math.max(0, Math.min(top, maxY));
+
+      butterfly.style.left = `${left}px`;
+      butterfly.style.top = `${top}px`;
+      butterfly.style.transform = `translate(0, 0)`;
+    }
+
+    function checkCollisions() {
+      const butterflyRect = butterfly.getBoundingClientRect();
+      const flowers = Array.from(playArea.querySelectorAll('.flower'));
+      flowers.forEach((flower) => {
+        const flowerRect = flower.getBoundingClientRect();
+        if (
+          butterflyRect.left < flowerRect.right &&
+          butterflyRect.right > flowerRect.left &&
+          butterflyRect.top < flowerRect.bottom &&
+          butterflyRect.bottom > flowerRect.top
+        ) {
+          flower.remove();
+          state.score += 10;
+          scoreLabel.textContent = state.score;
+          spawnFlower();
+          if (state.score >= 300) {
+            endGame('太棒了！蝴蝶完成了花園巡禮。');
+          }
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (state.keyState.hasOwnProperty(e.key)) {
+        e.preventDefault();
+        state.keyState[e.key] = true;
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (state.keyState.hasOwnProperty(e.key)) {
+        state.keyState[e.key] = false;
+      }
+    });
+
+    startBtn.addEventListener('click', () => {
+      resetGame();
+      setTimeout(startGame, 300);
+    });
+
+    window.addEventListener('resize', () => {
+      const rect = areaRect();
+      butterfly.style.left = `${rect.width / 2 - 20}px`;
+      butterfly.style.top = `${rect.height / 2 - 20}px`;
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
